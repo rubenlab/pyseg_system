@@ -17,6 +17,7 @@
 
 __author__ = 'Antonio Martinez-Sanchez'
 
+import argparse
 import operator
 import pyseg as ps
 from pyseg.globals.utils import coords_scale_supression
@@ -26,18 +27,28 @@ from pyseg.globals.utils import coords_scale_supression
 ########################################################################################
 
 
-ROOT_PATH = '../../../..'
+ROOT_PATH = '/scratch/users/muth9/simsiam/particle_picking'
 
 # Input STAR file
-in_star = ROOT_PATH + '/data/tutorials/synth_sumb/fils/out/fil_mb_sources_to_no_mb_targets_net.star'
+in_star = ROOT_PATH + '/data/fils/fil_mb_sources_to_no_mb_targets_net.star'
 
 ####### Output data
 
-output_dir = ROOT_PATH + '/data/tutorials/synth_sumb/pick/out'
+output_dir = ROOT_PATH + '/data/pick'
 
 ###### Slices settings file
 
-slices_file = ROOT_PATH + '/data/tutorials/synth_sumb/pick/in/mb_cont_1.xml'
+slices_file = ROOT_PATH + '/data/pick/mb_cont_1.xml'
+
+#Sarahs addition
+parser = argparse.ArgumentParser()
+parser.add_argument('--inStar', default=in_star, help='Input star file.')
+parser.add_argument('--outDir', default=output_dir, help='Output subtomograms directory.')
+
+args = parser.parse_args()
+
+in_star = args.inStar
+output_dir = args.outDir
 
 ###### Peaks configuration
 
