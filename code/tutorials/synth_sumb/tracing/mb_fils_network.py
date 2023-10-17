@@ -36,20 +36,20 @@ except:
 
 ####### Input data
 
-ROOT_PATH = '../../../..' # Data path
+ROOT_PATH = '/scratch/users/muth9/simsiam/particle_picking' # Data path
 
 # Input STAR file with the GraphMCF pickles
-in_star = ROOT_PATH + '/data/tutorials/synth_sumb/graphs/test_1_seg_mb_graph.star' # The outuput of mb_graph.py
+in_star = ROOT_PATH + '/data/graphs/PN_seg_mb_graph.star' # The outuput of mb_graph.py
 
 # Sources slice XML file
-in_sources = ROOT_PATH + '/data/tutorials/synth_sumb/fils/in/mb_sources.xml'
+in_sources = ROOT_PATH + '/pyseg-container/pyseg_system/data/tutorials/synth_sumb/tracing/fils/in/mb_sources.xml'
 
 # Targets slice XML file
-in_targets = ROOT_PATH + '/data/tutorials/synth_sumb/fils/in/no_mb_targets.xml'
+in_targets = ROOT_PATH + '/pyseg-container/pyseg_system/data/tutorials/synth_sumb/tracing/fils/in/no_mb_targets.xml'
 
 ####### Output data
 
-out_dir = ROOT_PATH + '/data/tutorials/synth_sumb/fils/out' # '/fils/cyto'
+out_dir = ROOT_PATH + '/data/fils' # '/fils/cyto'
 out_int_g = True
 
 ####### Filament geometrical parameters
