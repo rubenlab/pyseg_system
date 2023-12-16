@@ -33,6 +33,7 @@ import scipy as sp
 import multiprocessing as mp
 from pyorg import disperse_io, sub, spatial
 from pyorg.globals import *
+import mrcfile
 
 ###### Global variables
 
@@ -42,10 +43,10 @@ __author__ = 'Antonio Martinez-Sanchez'
 # PARAMETERS
 ########################################################################################
 
-ROOT_PATH = '../../../..' # '/fs/home/martinez/workspace/pyseg_system'
+ROOT_PATH = './' # '/fs/home/martinez/workspace/pyseg_system'
 
 # Output directory
-out_dir = ROOT_PATH + '/data/tutorials/synth_sumb/mics'
+out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_1')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
 out_stem = 'test_1'
 
 # Multiprocessing settings
@@ -70,11 +71,11 @@ mc_ip_min_dst = 20 # 15 # nm
 mc_1st_crad = 50 # nm
 mc_c_jump_prob = 0.01
 mc_4th_dst = 30 # nm
-mc_in_models = (ROOT_PATH + '/data/tutorials/synth_sumb/models/4uqj_r2.62_90_nostd.mrc',
-                ROOT_PATH + '/data/tutorials/synth_sumb/models/5gjv_r2.62_90_nostd.mrc',
-                ROOT_PATH + '/data/tutorials/synth_sumb/models/5vai_r2.62_90_nostd.mrc',
-                ROOT_PATH + '/data/tutorials/synth_sumb/models/5kxi_r2.62_90_nostd.mrc',
-                ROOT_PATH + '/data/tutorials/synth_sumb/models/4pe5_r2.62_90_nostd.mrc')
+mc_in_models = (ROOT_PATH + 'models/4uqj_r2.62_90_nostd.mrc',
+                ROOT_PATH + 'models/5gjv_r2.62_90_nostd.mrc',
+                ROOT_PATH + 'models/5vai_r2.62_90_nostd.mrc',
+                ROOT_PATH + 'models/5kxi_r2.62_90_nostd.mrc',
+                ROOT_PATH + 'models/4pe5_r2.62_90_nostd.mrc')
 # mc_in_models = (ROOT_PATH + '/data/tutorials/synth_sumb/models/4uqj_r2.62_90_nostd.mrc',
 #                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5kxi_r2.62_90_nostd.mrc',
 #                 ROOT_PATH + '/data/tutorials/synth_sumb/models/4pe5_r2.62_90_nostd.mrc',
@@ -476,10 +477,18 @@ def pr_routine(pr_id, tomo_ids, settings):
         mc_halo_z_f = int(round(0.75 * settings.mc_halo_z))
         tomo[:, :, :mc_halo_z_f] = 0
         tomo[:, :, settings.tm_size[2]-mc_halo_z_f:] = 0
+        
+        # Save MRC file
         out_tomo_bin_nodist = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome without distortions as: ' + out_tomo_bin_nodist)
         tomo_bin_nodist = tomo_binning(tomo, settings.tm_bin)
         disperse_io.save_numpy(tomo_bin_nodist, out_tomo_bin_nodist)
+        out_tomo_bin_nodist_mrcfile= os.path.join(
+            out_dir, 
+            out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + 'mrcfile.mrc'
+            )
+        with mrcfile.new(out_tomo_bin_nodist_mrcfile) as mrc:
+            mrc.set_data(tomo_bin_nodist)
 
         print('\t\t\t+M[' + str(pr_id) + '/' + str(i) + '] Adding the distortions...')
         mask = tomo > 0
@@ -489,14 +498,31 @@ def pr_routine(pr_id, tomo_ids, settings):
         tomo = lin_map(tomo, tomo.max(), tomo.min())
         tomo = add_mw(tomo, settings.tm_wedge_rot, settings.tm_wedge)
         tomo = tomo.astype(np.float16)
-
+        
+        # Save MRC file
         out_tomo = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the microsome as: ' + out_tomo)
         disperse_io.save_numpy(tomo.astype(np.float16), out_tomo)
+        out_tomo_mrcfile= os.path.join(
+            out_dir,
+            out_stem + '_tomo_mic_' + str(i) + 'mrcfile.mrc'
+            )
+        with mrcfile.new(out_tomo_mrcfile) as mrc:
+            mrc.set_data( tomo.astype(np.float16) )
+        
+        # Save MRC file
         out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome as: ' + out_tomo_bin)
         tomo_bin = tomo_binning(tomo, tm_bin)
         disperse_io.save_numpy(tomo_bin, out_tomo_bin)
+        out_tomo_bin_mrcfile= ps.path.join(
+            out_dir,
+            out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + 'mrcfile.mrc'
+            )
+        with mrcfile.new(out_tomo_bin_mrcfile) as mrc:
+            mrc.set_data(tomo_bin)
+        
+        # Save filenames to global list of tuples
         cols.append((out_tomo, out_tomo_bin))
 
     print('\tProcess ' + str(pr_id) + ' has finished.')
