@@ -33,7 +33,11 @@ import scipy as sp
 import multiprocessing as mp
 from pyorg import disperse_io, sub, spatial
 from pyorg.globals import *
-import mrcfile
+try:
+    import mrcfile
+except ImportError:
+    print("ERROR!! mrcfile must be installed")
+    exit(1)
 
 ###### Global variables
 
@@ -46,7 +50,7 @@ __author__ = 'Antonio Martinez-Sanchez'
 ROOT_PATH = './' # '/fs/home/martinez/workspace/pyseg_system'
 
 # Output directory
-out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_1')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
+out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_3')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
 out_stem = 'test_1'
 
 # Multiprocessing settings
@@ -482,10 +486,10 @@ def pr_routine(pr_id, tomo_ids, settings):
         out_tomo_bin_nodist = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome without distortions as: ' + out_tomo_bin_nodist)
         tomo_bin_nodist = tomo_binning(tomo, settings.tm_bin)
-        disperse_io.save_numpy(tomo_bin_nodist, out_tomo_bin_nodist)
+        ###disperse_io.save_numpy(tomo_bin_nodist, out_tomo_bin_nodist)
         out_tomo_bin_nodist_mrcfile= os.path.join(
             out_dir, 
-            out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + 'mrcfile.mrc'
+            out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
             )
         with mrcfile.new(out_tomo_bin_nodist_mrcfile) as mrc:
             mrc.set_data(tomo_bin_nodist)
@@ -502,10 +506,10 @@ def pr_routine(pr_id, tomo_ids, settings):
         # Save MRC file
         out_tomo = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the microsome as: ' + out_tomo)
-        disperse_io.save_numpy(tomo.astype(np.float16), out_tomo)
+        ###disperse_io.save_numpy(tomo.astype(np.float16), out_tomo)
         out_tomo_mrcfile= os.path.join(
             out_dir,
-            out_stem + '_tomo_mic_' + str(i) + 'mrcfile.mrc'
+            out_stem + '_tomo_mic_' + str(i) + '.mrc'
             )
         with mrcfile.new(out_tomo_mrcfile) as mrc:
             mrc.set_data( tomo.astype(np.float16) )
@@ -514,10 +518,10 @@ def pr_routine(pr_id, tomo_ids, settings):
         out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome as: ' + out_tomo_bin)
         tomo_bin = tomo_binning(tomo, tm_bin)
-        disperse_io.save_numpy(tomo_bin, out_tomo_bin)
-        out_tomo_bin_mrcfile= ps.path.join(
+        ###disperse_io.save_numpy(tomo_bin, out_tomo_bin)
+        out_tomo_bin_mrcfile= os.path.join(
             out_dir,
-            out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + 'mrcfile.mrc'
+            out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
             )
         with mrcfile.new(out_tomo_bin_mrcfile) as mrc:
             mrc.set_data(tomo_bin)

@@ -17,37 +17,38 @@ else
   install_exe="$clean_exe"
 fi
 
-$install_exe install conda-libmamba-solver --yes \
-  && conda config --set solver libmamba
-  
-status_code=$?
-if [[ $status_code -eq 0 ]] ; then
-  solver_cmd="$install_exe install --yes --solver=libmamba"
+solver_cmd="$install_exe install --yes"
+if ! $install_exe install conda-libmamba-solver --yes && conda config --set solver libmamba ; then
+  if $solver_cmd mrcfile --solver=libmamba ; then
+    echo "Found conda-libmamba-solver"
+    solver_cmd="$install_exe install --yes --solver=libmamba"
+  else
+    echo "Found conda-libmamba-solver but couldn't use it"
+  fi
 else
-  solver_cmd="$install_exe install --yes"
+  echo "Did not find conda-libmamba-solver"
 fi
-  
-$solver_cmd --channel conda-forge --channel anaconda \
-  python=3.7 \
-  opencv=4.2.0 \
-  graph-tool=2.29 \
-  future=0.18.2=py37_0 \
-  pip=23.3 \
-  && $install_exe clean --yes --all \
-  && pip install "setuptools<58" \
-  && pip install beautifulsoup4==4.9.3 \
-  lxml==4.6.3 \
-  pillow==6.2.2 \
-  pywavelets==1.1.1 \
-  pyfits==3.5 \
-  scikit-image==0.14.5 \
-  scikit-learn==0.20.4 \
-  scikit-fmm==2021.2.2 \
-  scipy==1.2.1 \
-  vtk==8.1.2 \
-  astropy==4.1 \
-  imageio==2.9.0 \
-  && $clean_exe clean --yes --all
 
-#      numpy \
-#      pytest \
+$solver_cmd --channel conda-forge --channel anaconda \
+  "numpy<1.25.0" \
+  "python<3.10.0a0"\
+  "opencv>=4.2.0" \
+  "graph-tool>=2.29" \
+  future=0.18.2 \
+  pip=23.3 \
+  mrcfile
+$install_exe clean --yes --all
+pip install setuptools
+pip install beautifulsoup4==4.9.3 \
+  lxml \
+  pillow \
+  pywavelets \
+  scikit-image \
+  scikit-learn \
+  scikit-fmm \
+  scipy \
+  vtk \
+  astropy \
+  imageio
+$install_exe clean --yes --all
+
