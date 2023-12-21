@@ -38,6 +38,7 @@ try:
 except ImportError:
     print("ERROR!! mrcfile must be installed")
     exit(1)
+import sys
 
 ###### Global variables
 
@@ -50,7 +51,7 @@ __author__ = 'Antonio Martinez-Sanchez'
 ROOT_PATH = './' # '/fs/home/martinez/workspace/pyseg_system'
 
 # Output directory
-out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_3')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
+out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_5')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
 out_stem = 'test_1'
 
 # Multiprocessing settings
@@ -422,7 +423,8 @@ def pr_routine(pr_id, tomo_ids, settings):
     for i in tomo_ids:
 
         snr = settings.snrs[i]
-        print('\t\t-M[' + str(pr_id) + '/' + str(i) + '] Generating microsome ' + str(i) + ' with SNR=' + str(snr) + ':')
+        ###print('\t\t-M[' + str(pr_id) + '/' + str(i) + '] Generating microsome ' + str(i) + ' with SNR=' + str(snr) + ':')
+        print(f'\t\t-M[{str(pr_id)}/{str(i)}] Generating microsome {str(i)} with SNR={snr:.5f}:')
         tm_size_hz = np.asarray(settings.tm_size, dtype=int)
         tm_size_hz[2] -= (2 * settings.mc_halo_z)
         tomo = np.zeros(shape=settings.tm_size, dtype=np.float16)
@@ -462,7 +464,6 @@ def pr_routine(pr_id, tomo_ids, settings):
             else:
                 write_or_append='a'
             with open(out_coords, write_or_append) as f:
-                ###print(f"i {i}, j {j}, key {key}, locs {type(locs)}, angs {len(angs)}, out_coords {out_coords}, write_or_append {write_or_append}")  #### DIAGNOSTIC
                 if j==0 : f.write("# tomo_idx, model_idx, model_name, model_loc_idx, x, y, z, phi, theta, psi\n")
                 for loc_idx, loc in enumerate(locs):
                     f.write(f"{i}, {j}, {os.path.basename(key)}, {loc_idx}, {', '.join(map( str,['{0:0.2f}'.format(i) for i in loc]) )}, {', '.join(map( str,['{0:0.2f}'.format(i) for i in angs[loc_idx]]) )}\n")
@@ -516,7 +517,7 @@ def pr_routine(pr_id, tomo_ids, settings):
         
         # Save MRC file
         out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
-        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome as: ' + out_tomo_bin)
+        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome as: ' + out_tomo_bin, file=sys.stdout, flush=True)
         tomo_bin = tomo_binning(tomo, tm_bin)
         ###disperse_io.save_numpy(tomo_bin, out_tomo_bin)
         out_tomo_bin_mrcfile= os.path.join(
@@ -529,7 +530,7 @@ def pr_routine(pr_id, tomo_ids, settings):
         # Save filenames to global list of tuples
         cols.append((out_tomo, out_tomo_bin))
 
-    print('\tProcess ' + str(pr_id) + ' has finished.')
+    print('\tProcess ' + str(pr_id) + ' has finished.', file=sys.stdout, flush=True)
     sys.exit(pr_id)
 
 ########################################################################################
@@ -611,9 +612,9 @@ cent_v = .5*np.asarray(hold_ref_0.shape, dtype=float) - cent_p
 mc_ip_min_dst_v, mc_1st_crad_v, mc_4th_dst_v = float(mc_ip_min_dst)/tm_res, float(mc_1st_crad)/tm_res, \
                                                float(mc_4th_dst)/tm_res
 
-print('Main routine: ')
+print('Main routine: ', file=sys.stdout, flush=True)
 
-print('\tParallel loop for microsomes: ')
+print('\tParallel loop for microsomes: ', file=sys.stdout, flush=True)
 settings = Settings()
 settings.snrs = snrs
 settings.svol_refs = svol_refs
@@ -653,11 +654,11 @@ else:
     for pr_id, pr in zip(iter(processes.keys()), iter(processes.values())):
         pr.join()
         if pr_id != pr.exitcode:
-            print('ERROR: the process ' + str(pr_id) + ' ended unsuccessfully [' + str(pr.exitcode) + ']')
-            print('Unsuccessfully terminated. (' + time.strftime("%c") + ')')
+            print('ERROR: the process ' + str(pr_id) + ' ended unsuccessfully [' + str(pr.exitcode) + ']', file=sys.stdout, flush=True)
+            print('Unsuccessfully terminated. (' + time.strftime("%c") + ')', file=sys.stdout, flush=True)
 
 out_star = out_dir + '/' + out_stem + '.star'
-print('\tStoring output STAR file in: ' + out_star)
+print('\tStoring output STAR file in: ' + out_star, file=sys.stdout, flush=True)
 star_tomos = sub.Star()
 star_tomos.add_column('_rlnMicrographName')
 star_tomos.add_column('_rlnImageName')
