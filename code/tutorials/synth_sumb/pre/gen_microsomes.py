@@ -39,6 +39,8 @@ except ImportError:
     print("ERROR!! mrcfile must be installed")
     exit(1)
 import sys
+import argparse
+import glob
 
 ###### Global variables
 
@@ -51,7 +53,7 @@ __author__ = 'Antonio Martinez-Sanchez'
 ROOT_PATH = './' # '/fs/home/martinez/workspace/pyseg_system'
 
 # Output directory
-out_dir = os.path.join(ROOT_PATH, 'mics_mrcfile_5')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
+out_dir = os.path.join(ROOT_PATH, 'mics')  # ROOT_PATH + '/data/tutorials/synth_sumb/mics'
 out_stem = 'test_1'
 
 # Multiprocessing settings
@@ -94,6 +96,58 @@ mc_avg_nparts = (15, 30, 20, 30, 20)
 mc_3sg_nparts = 5
 mc_zh = 30
 mc_halo_z = 80
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('--models', '-i', type=str, help='Particle models (surrounded by quotes if more than one)', required=True)
+parser.add_argument('--out_dir', '-o', type=str, default=out_dir, help='Output directory')
+parser.add_argument('--stem', type=str, default=out_stem, help='Output stem')
+parser.add_argument('--npr', type=int, default=mp_npr, help='Number of parallel processes')
+
+tomos= parser.add_argument_group(title="Tomogram patterns")
+tomos.add_argument('--numTomos', type=int, default=tm_nt, help='Number of tomograms')
+tomos.add_argument('--dims', nargs=3, type=int, default=tm_size, help='Tomogram dimensions, 3 values separated by spaces')
+tomos.add_argument('--res', type=float, default=tm_res, help='Resolution, nm/px')
+tomos.add_argument('--snr_range', nargs=2, type=float, default=tm_snr_rg, help='SNR range, 2 values separated by spaces')
+tomos.add_argument('--wedge', type=float, default=tm_wedge, help='Missing wedge semi-angle, degrees')
+tomos.add_argument('--rot', type=float, default=tm_wedge_rot, help='Rotation for wedge axis, degrees')
+tomos.add_argument('--bin', type=int, default=tm_bin, help='Binning factor')
+tomos.add_argument('--rsz', nargs=3, type=int, default=tm_rsz, help='Resized-model dimensions, pixels, 3 values separated by spaces')
+
+microsomes= parser.add_argument_group(title="Microsome parameters")
+microsomes.add_argument('--mem_thick', type=float, default=mc_mbt, help='Membrane thickness, nm')
+microsomes.add_argument('--mem_sigma', type=float, default=mc_mbs, help='Membrane layer sigma, nm')
+microsomes.add_argument('--dist', type=float, default=mc_ip_min_dst, help='Minimum iter-particle distance, nm')
+microsomes.add_argument('--rad', type=float, default=mc_1st_crad, help='Cluster radius, nm')
+microsomes.add_argument('--prob', type=float, default=mc_c_jump_prob, help='Probability to create a new cluster evaluated each time a particle is addded [0..1]')
+microsomes.add_argument('--fourth', type=float, default=mc_4th_dst, help='Average distance to the 3rd pattern particles for the 4th pattern particles, nm')
+microsomes.add_argument('--parts_avg', nargs="+", type=float, default=mc_avg_nparts, help='Average number of particles per model and microsome, separated by spaces if more than one')
+microsomes.add_argument('--parts_dev', type=float, default=mc_3sg_nparts, help='Maximum deviation in number of particles (3*sigma of Gaussian)')
+microsomes.add_argument('--height', type=int, default=mc_zh, help='Subvolume center height, px')
+microsomes.add_argument('--discard', type=int, default=mc_halo_z, help='Number of slices to discard on top and bottom of the microsomes')
+args = parser.parse_args()
+
+out_dir= args.out_dir
+out_stem= args.stem
+mp_npr= args.npr
+tm_nt= args.numTomos
+tm_size= tuple(args.dims)
+tm_res= args.res
+tm_snr_rg= tuple(args.snr_range)
+tm_wedge= args.wedge
+tm_bin= args.bin
+tm_rsz= tuple(args.rsz)
+mc_mbt= args.mem_thick
+mc_mbs= args.mem_sigma
+mc_ip_min_dst= args.dist
+mc_1st_crad= args.rad
+mc_c_jump_prob= args.prob
+mc_4th_dst= args.fourth
+mc_avg_nparts= tuple(args.parts_avg)
+mc_3sg_nparts= args.parts_dev
+mc_zh= args.height
+mc_halo_z= args.discard
+mc_in_models0= mc_in_models
+mc_in_models= tuple( glob.glob(args.models) )
 
 ########################################################################################
 # ADDITIONAL ROUTINES AND STRUCTURES
@@ -484,16 +538,16 @@ def pr_routine(pr_id, tomo_ids, settings):
         tomo[:, :, settings.tm_size[2]-mc_halo_z_f:] = 0
         
         # Save MRC file
-        out_tomo_bin_nodist = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
-        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome without distortions as: ' + out_tomo_bin_nodist)
+        ###out_tomo_bin_nodist = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
         tomo_bin_nodist = tomo_binning(tomo, settings.tm_bin)
         ###disperse_io.save_numpy(tomo_bin_nodist, out_tomo_bin_nodist)
         out_tomo_bin_nodist_mrcfile= os.path.join(
             out_dir, 
             out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
             )
-        with mrcfile.new(out_tomo_bin_nodist_mrcfile) as mrc:
-            mrc.set_data(tomo_bin_nodist)
+        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + 'X-binned microsome without distortions as: ' + out_tomo_bin_nodist_mrcfile)
+        with mrcfile.new(out_tomo_bin_nodist_mrcfile, overwrite=True) as mrc:
+            mrc.set_data( tomo_bin_nodist.astype(np.float32) )
 
         print('\t\t\t+M[' + str(pr_id) + '/' + str(i) + '] Adding the distortions...')
         mask = tomo > 0
@@ -502,33 +556,33 @@ def pr_routine(pr_id, tomo_ids, settings):
         tomo += np.random.normal(mn, sg_bg, size=settings.tm_size)
         tomo = lin_map(tomo, tomo.max(), tomo.min())
         tomo = add_mw(tomo, settings.tm_wedge_rot, settings.tm_wedge)
-        tomo = tomo.astype(np.float16)
+        tomo = tomo.astype(np.float32)
         
         # Save MRC file
-        out_tomo = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '.mrc'
-        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the microsome as: ' + out_tomo)
+        ##out_tomo = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '.mrc'
         ###disperse_io.save_numpy(tomo.astype(np.float16), out_tomo)
         out_tomo_mrcfile= os.path.join(
             out_dir,
             out_stem + '_tomo_mic_' + str(i) + '.mrc'
             )
-        with mrcfile.new(out_tomo_mrcfile) as mrc:
-            mrc.set_data( tomo.astype(np.float16) )
+        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the microsome as: ' + out_tomo_mrcfile)
+        with mrcfile.new(out_tomo_mrcfile, overwrite=True) as mrc:
+            mrc.set_data(tomo)
         
         # Save MRC file
-        out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
-        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + ' binned microsome as: ' + out_tomo_bin, file=sys.stdout, flush=True)
+        ###out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
         tomo_bin = tomo_binning(tomo, tm_bin)
         ###disperse_io.save_numpy(tomo_bin, out_tomo_bin)
         out_tomo_bin_mrcfile= os.path.join(
             out_dir,
             out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
             )
-        with mrcfile.new(out_tomo_bin_mrcfile) as mrc:
+        print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + 'X-binned microsome as: ' + out_tomo_bin_mrcfile, file=sys.stdout, flush=True)
+        with mrcfile.new(out_tomo_bin_mrcfile, overwrite=True) as mrc:
             mrc.set_data(tomo_bin)
         
         # Save filenames to global list of tuples
-        cols.append((out_tomo, out_tomo_bin))
+        cols.append((out_tomo_mrcfile, out_tomo_bin_mrcfile))
 
     print('\tProcess ' + str(pr_id) + ' has finished.', file=sys.stdout, flush=True)
     sys.exit(pr_id)
@@ -547,7 +601,7 @@ print('\tAuthor: ' + __author__)
 print('\tDate: ' + time.strftime("%c") + '\n')
 print('Options:')
 print('\tOutput directory: ' + str(out_dir))
-print('\tOuput stem: ' + str(out_stem))
+print('\tOutput stem: ' + str(out_stem))
 print('\tMultiprocessing settings:')
 print('\t\t-Number of parallel processes: ' + str(mp_npr))
 print('\tTomograms settings:')
@@ -562,15 +616,15 @@ print('\t\t-Sub-volume size: ' + str(tm_size))
 print('\tMicrosome settings:')
 print('\t\t-Membrane thickness: ' + str(mc_mbt) + ' nm')
 print('\t\t-Membrane layer sigma: ' + str(mc_mbs) + ' nm')
-print('\t\t-Minimum iter-particles distance: ' + str(mc_ip_min_dst) + ' nm')
-print('\t\t-Clusters radius for 1st pattern: ' + str(mc_1st_crad) + ' nm')
-print('\t\t-Clusters radius for 2nd pattern: ' + str(2*mc_1st_crad) + ' nm')
-print('\t\t-Averaged ditance to the 3rd pattern particles for the 4th pattern particles: ' + str(mc_4th_dst) + ' nm')
+print('\t\t-Minimum iter-particle distance: ' + str(mc_ip_min_dst) + ' nm')
+print('\t\t-Cluster radius for 1st pattern: ' + str(mc_1st_crad) + ' nm')
+print('\t\t-Cluster radius for 2nd pattern: ' + str(2*mc_1st_crad) + ' nm')
+print('\t\t-Average distance to the 3rd pattern particles for the 4th pattern particles: ' + str(mc_4th_dst) + ' nm')
 print('\t\t-Input files with the density models: ' + str(mc_in_models))
-print('\t\t-Averaged (normal distribution) number of particles per model and microsome: ' + str(mc_avg_nparts))
+print('\t\t-Average (normal distribution) number of particles per model and microsome: ' + str(mc_avg_nparts))
 print('\t\t-Maximum deviation (3sg for Gaussian): ' + str(mc_3sg_nparts))
-print('\t\t-Subvolumes center height: ' + str(mc_zh) + ' px')
-print('\t\t-Slices to discard (to set zero) on top and bottom of the microsomes: ' + str(mc_halo_z) + ' px')
+print('\t\t-Subvolume center height: ' + str(mc_zh) + ' px')
+print('\t\t-Slices to discard (to set to zero) on top and bottom of the microsomes: ' + str(mc_halo_z) + ' px')
 print('')
 
 ########### Input parsing
