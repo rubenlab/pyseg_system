@@ -78,19 +78,11 @@ mc_ip_min_dst = 20 # 15 # nm
 mc_1st_crad = 50 # nm
 mc_c_jump_prob = 0.01
 mc_4th_dst = 30 # nm
-mc_in_models = (ROOT_PATH + 'models/4uqj_r2.62_90_nostd.mrc',
-                ROOT_PATH + 'models/5gjv_r2.62_90_nostd.mrc',
-                ROOT_PATH + 'models/5vai_r2.62_90_nostd.mrc',
-                ROOT_PATH + 'models/5kxi_r2.62_90_nostd.mrc',
-                ROOT_PATH + 'models/4pe5_r2.62_90_nostd.mrc')
-# mc_in_models = (ROOT_PATH + '/data/tutorials/synth_sumb/models/4uqj_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5kxi_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/4pe5_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5vai_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5ide_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5gjv_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5tj6_r2.62_90_nostd.mrc',
-#                 ROOT_PATH + '/data/tutorials/synth_sumb/models/5tqq_r2.62_90_nostd.mrc')
+#mc_in_models = (ROOT_PATH + 'models/4uqj_r2.62_90_nostd.mrc',
+                #ROOT_PATH + 'models/5gjv_r2.62_90_nostd.mrc',
+                #ROOT_PATH + 'models/5vai_r2.62_90_nostd.mrc',
+                #ROOT_PATH + 'models/5kxi_r2.62_90_nostd.mrc',
+                #ROOT_PATH + 'models/4pe5_r2.62_90_nostd.mrc')
 mc_avg_nparts = (15, 30, 20, 30, 20)
 # mc_avg_nparts = (20, 10, 30, 20, 30, 20, 25, 10)
 mc_3sg_nparts = 5
@@ -103,7 +95,7 @@ parser.add_argument('--out_dir', '-o', type=str, default=out_dir, help='Output d
 parser.add_argument('--stem', type=str, default=out_stem, help='Output stem')
 parser.add_argument('--npr', type=int, default=mp_npr, help='Number of parallel processes')
 
-tomos= parser.add_argument_group(title="Tomogram patterns")
+tomos= parser.add_argument_group(title="Tomogram settings")
 tomos.add_argument('--numTomos', type=int, default=tm_nt, help='Number of tomograms')
 tomos.add_argument('--dims', nargs=3, type=int, default=tm_size, help='Tomogram dimensions, 3 values separated by spaces')
 tomos.add_argument('--res', type=float, default=tm_res, help='Resolution, nm/px')
@@ -146,7 +138,7 @@ mc_avg_nparts= tuple(args.parts_avg)
 mc_3sg_nparts= args.parts_dev
 mc_zh= args.height
 mc_halo_z= args.discard
-mc_in_models0= mc_in_models
+###mc_in_models0= mc_in_models
 mc_in_models= tuple( glob.glob(args.models) )
 
 ########################################################################################
@@ -538,9 +530,7 @@ def pr_routine(pr_id, tomo_ids, settings):
         tomo[:, :, settings.tm_size[2]-mc_halo_z_f:] = 0
         
         # Save MRC file
-        ###out_tomo_bin_nodist = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
         tomo_bin_nodist = tomo_binning(tomo, settings.tm_bin)
-        ###disperse_io.save_numpy(tomo_bin_nodist, out_tomo_bin_nodist)
         out_tomo_bin_nodist_mrcfile= os.path.join(
             out_dir, 
             out_stem + '_tomo_mic_' + str(i) + '_nodist_bin_' + str(tm_bin) + '.mrc'
@@ -548,6 +538,7 @@ def pr_routine(pr_id, tomo_ids, settings):
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + 'X-binned microsome without distortions as: ' + out_tomo_bin_nodist_mrcfile)
         with mrcfile.new(out_tomo_bin_nodist_mrcfile, overwrite=True) as mrc:
             mrc.set_data( tomo_bin_nodist.astype(np.float32) )
+            mrc.voxel_size= settings.tm_res*tm_bin
 
         print('\t\t\t+M[' + str(pr_id) + '/' + str(i) + '] Adding the distortions...')
         mask = tomo > 0
@@ -559,8 +550,6 @@ def pr_routine(pr_id, tomo_ids, settings):
         tomo = tomo.astype(np.float32)
         
         # Save MRC file
-        ##out_tomo = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '.mrc'
-        ###disperse_io.save_numpy(tomo.astype(np.float16), out_tomo)
         out_tomo_mrcfile= os.path.join(
             out_dir,
             out_stem + '_tomo_mic_' + str(i) + '.mrc'
@@ -568,11 +557,10 @@ def pr_routine(pr_id, tomo_ids, settings):
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the microsome as: ' + out_tomo_mrcfile)
         with mrcfile.new(out_tomo_mrcfile, overwrite=True) as mrc:
             mrc.set_data(tomo)
+            mrc.voxel_size= settings.tm_res
         
         # Save MRC file
-        ###out_tomo_bin = out_dir + '/' + out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
         tomo_bin = tomo_binning(tomo, tm_bin)
-        ###disperse_io.save_numpy(tomo_bin, out_tomo_bin)
         out_tomo_bin_mrcfile= os.path.join(
             out_dir,
             out_stem + '_tomo_mic_' + str(i) + '_bin_' + str(tm_bin) + '.mrc'
@@ -580,6 +568,7 @@ def pr_routine(pr_id, tomo_ids, settings):
         print('\t\t\t-M[' + str(pr_id) + '/' + str(i) + '] Saving the ' + str(tm_bin) + 'X-binned microsome as: ' + out_tomo_bin_mrcfile, file=sys.stdout, flush=True)
         with mrcfile.new(out_tomo_bin_mrcfile, overwrite=True) as mrc:
             mrc.set_data(tomo_bin)
+            mrc.voxel_size= settings.tm_res*tm_bin
         
         # Save filenames to global list of tuples
         cols.append((out_tomo_mrcfile, out_tomo_bin_mrcfile))
