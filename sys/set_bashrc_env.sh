@@ -24,6 +24,6 @@ printf "\n" >> soft/bashrc_pyseg_sys
 ## Add entry to .bashrc
 printf "\n## PySeg system "$date" \n" >> ~/.bashrc
 printf "\n" >> ~/.bashrc
-printf "export use_pyseg='source "$PWD"/soft/bashrc_pyseg_sys'" >> ~/.bashrc
+printf alias use_pyseg='source "$PWD"/soft/bashrc_pyseg_sys'" >> ~/.bashrc
 printf "\n\n" >> ~/.bashrc
 exec bash
